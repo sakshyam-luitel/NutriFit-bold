@@ -4,12 +4,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from .models import Ingredient, DietPlan, DietPlanItem
-from .serializers import (
+from .management.serializers import (
     IngredientSerializer, DietPlanSerializer,
     DietPlanListSerializer, DietPlanItemSerializer
 )
-from ai_services.diet_generator import DietPlanGenerator
-from ai_services.nl_parser import NaturalLanguageParser
+from nutrifit_backend1.ai_services.diet_generator import DietPlanGenerator
+from nutrifit_backend1.ai_services.nl_parser import NaturalLanguageParser
 
 
 class IngredientListView(generics.ListAPIView):
