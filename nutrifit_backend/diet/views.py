@@ -8,8 +8,8 @@ from .management.serializers import (
     IngredientSerializer, DietPlanSerializer,
     DietPlanListSerializer, DietPlanItemSerializer
 )
-from nutrifit_backend1.ai_services.diet_generator import DietPlanGenerator
-from nutrifit_backend1.ai_services.nl_parser import NaturalLanguageParser
+from ai_services.diet_generator import DietPlanGenerator
+from ai_services.nl_parser import NaturalLanguageParser
 
 
 class IngredientListView(generics.ListAPIView):
@@ -66,13 +66,30 @@ def generate_diet_plan(request):
     """Generate AI-powered diet plan."""
     
     try:
-        generator = DietPlanGenerator(request.user)
-        plan = generator.generate_plan(request.data)
+        # For now, create a simple diet plan without AI generation
+        # Extract data from request
+        plan_name = request.data.get('plan_name', 'My Diet Plan')
+        ai_description = request.data.get('ai_description', '')
         
-        serializer = DietPlanSerializer(plan)
+        # Create a simple diet plan
+        diet_plan = DietPlan.objects.create(
+            user=request.user,
+            plan_name=plan_name,
+            ai_description=ai_description,
+            total_calories=2000,  # Default values
+            total_protein=150,
+            total_carbs=200,
+            total_fat=65,
+        )
+        
+        serializer = DietPlanSerializer(diet_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     except Exception as e:
+        print(f"Diet plan generation error: {str(e)}")
+        print(f"Request data: {request.data}")
+        import traceback
+        traceback.print_exc()
         return Response({
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)

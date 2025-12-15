@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from ...nutrifit_backend.accounts.views import RegisterView, LoginView
+from accounts.views import RegisterView, LoginView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),

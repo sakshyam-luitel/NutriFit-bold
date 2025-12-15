@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { UserProfile } from '../types';
-import { supabase } from '../lib/supabase';
+import type { UserProfile } from '../types';
+import { aiAPI, dietPlansAPI } from '../lib/api';
 import { ArrowLeft, MessageSquare, Sparkles } from 'lucide-react';
 
 interface NaturalLanguageInputProps {
@@ -22,25 +22,9 @@ export function NaturalLanguageInput({ profile, onPlanCreated, onBack }: Natural
     setLoading(true);
 
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-natural-language`;
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ input, userId: profile.id }),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to parse input');
-      }
-
-      setParsedData(result.data);
+      const result = await aiAPI.parseNaturalLanguage(input);
+      // backend returns parsed result directly
+      setParsedData(result);
     } catch (err: any) {
       setError(err.message || 'Failed to parse your input');
     } finally {
@@ -64,26 +48,20 @@ export function NaturalLanguageInput({ profile, onPlanCreated, onBack }: Natural
         medicalConditions: parsedData.medicalConditions || [],
         preferences: parsedData.preferences || {},
       };
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diet-plan`;
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to generate diet plan');
+      // Use backend endpoint to generate plan from parsed natural language
+      // The backend endpoint `diet-plans/generate-from-nl/` expects { input } but
+      // there is also `diet-plans/generate/` which accepts structured data. We
+      // will call `generate-from-nl` when we have raw input, otherwise `generate`.
+      let result: any;
+      if (parsedData && parsedData.raw_input) {
+        result = await dietPlansAPI.generateFromNL(parsedData.raw_input || input);
+      } else {
+        // call structured endpoint
+        result = await dietPlansAPI.generate(requestData);
       }
 
-      onPlanCreated(result.planId);
+      // backend returns serialized plan
+      onPlanCreated(result.id?.toString() || result.plan_id?.toString());
     } catch (err: any) {
       setError(err.message || 'Failed to generate diet plan');
     } finally {

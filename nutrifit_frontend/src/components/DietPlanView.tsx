@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { DietPlan, DietPlanItem } from '../types';
+import type { DietPlan, DietPlanItem } from '../types';
+import { dietPlansAPI } from '../lib/api';
 import { ArrowLeft, Star, Printer, Download } from 'lucide-react';
 
 interface DietPlanViewProps {
@@ -19,25 +19,9 @@ export function DietPlanView({ planId, onBack }: DietPlanViewProps) {
 
   const loadPlan = async () => {
     try {
-      const { data: planData } = await supabase
-        .from('diet_plans')
-        .select('*')
-        .eq('id', planId)
-        .single();
-
-      setPlan(planData);
-
-      const { data: itemsData } = await supabase
-        .from('diet_plan_items')
-        .select(`
-          *,
-          ingredient:ingredients(*)
-        `)
-        .eq('diet_plan_id', planId)
-        .order('meal_type')
-        .order('order_index');
-
-      setItems(itemsData || []);
+      const planData = await dietPlansAPI.get(planId);
+      setPlan(planData || null);
+      setItems(planData?.items || []);
     } catch (error) {
       console.error('Error loading plan:', error);
     } finally {
@@ -47,14 +31,11 @@ export function DietPlanView({ planId, onBack }: DietPlanViewProps) {
 
   const toggleFavorite = async () => {
     if (!plan) return;
-
-    const { error } = await supabase
-      .from('diet_plans')
-      .update({ is_favorite: !plan.is_favorite })
-      .eq('id', planId);
-
-    if (!error) {
+    try {
+      await dietPlansAPI.update(planId, { is_favorite: !plan.is_favorite });
       setPlan({ ...plan, is_favorite: !plan.is_favorite });
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
     }
   };
 

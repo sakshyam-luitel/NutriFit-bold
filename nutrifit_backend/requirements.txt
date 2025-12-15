@@ -1,0 +1,11 @@
+Django>=4.2,<5.0
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.0
+python-dotenv>=1.0
+django-cors-headers>=4.0
+# Google Gemini client (optional) - install only if using AI features
+google-generativeai>=0.3.0
+# Optional (only if you use MySQL):
+# mysqlclient>=2.1
+# or use PyMySQL if preferred
+# PyMySQL>=1.0
